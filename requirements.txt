@@ -2,7 +2,7 @@ fastapi>=0.110.0
 uvicorn>=0.29.0
 quart>=0.19.4
 sqlmodel>=0.0.16
-curl_cffi>=0.6.0
+curl_cffi==0.7.4
 requests>=2.31.0
 playwright>=1.43.0
 patchright>=1.52.5
