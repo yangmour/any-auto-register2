@@ -270,7 +270,7 @@ class TempMailLolMailbox(BaseMailbox):
         import requests
         r = requests.post(f"{self.api}/inbox/create",
             json={},
-            proxies=self.proxy, timeout=30)
+            proxies=self.proxy, timeout=15)
         data = r.json()
         email = data.get("address") or data.get("email", "")
         if not email:
@@ -285,7 +285,7 @@ class TempMailLolMailbox(BaseMailbox):
         try:
             r = requests.get(f"{self.api}/inbox",
                 params={"token": account.account_id},
-                proxies=self.proxy, timeout=20)
+                proxies=self.proxy, timeout=10)
             return {str(m["id"]) for m in r.json().get("emails", [])}
         except Exception:
             return set()
@@ -301,7 +301,7 @@ class TempMailLolMailbox(BaseMailbox):
             try:
                 r = requests.get(f"{self.api}/inbox",
                     params={"token": account.account_id},
-                    proxies=self.proxy, timeout=20)
+                    proxies=self.proxy, timeout=10)
                 for mail in sorted(r.json().get("emails", []), key=lambda x: x.get("date", 0), reverse=True):
                     mid = str(mail.get("id", ""))
                     if mid in seen:
@@ -367,7 +367,7 @@ class DuckMailMailbox(BaseMailbox):
             r = requests.get(f"{self.api}/api/mail?endpoint=%2Fmessages%3Fpage%3D1",
                 headers={"authorization": f"Bearer {account.account_id}",
                          "x-api-provider-base-url": self.provider_url},
-                proxies=self.proxy, timeout=20)
+                proxies=self.proxy, timeout=10)
             return {str(m["id"]) for m in r.json().get("hydra:member", [])}
         except Exception:
             return set()
@@ -382,7 +382,7 @@ class DuckMailMailbox(BaseMailbox):
                 r = requests.get(f"{self.api}/api/mail?endpoint=%2Fmessages%3Fpage%3D1",
                     headers={"authorization": f"Bearer {account.account_id}",
                              "x-api-provider-base-url": self.provider_url},
-                    proxies=self.proxy, timeout=20)
+                    proxies=self.proxy, timeout=10)
                 msgs = r.json().get("hydra:member", [])
                 for msg in msgs:
                     mid = str(msg.get("id") or msg.get("msgid") or "")
@@ -393,7 +393,7 @@ class DuckMailMailbox(BaseMailbox):
                         r2 = requests.get(f"{self.api}/api/mail?endpoint=%2Fmessages%2F{mid}",
                             headers={"authorization": f"Bearer {account.account_id}",
                                      "x-api-provider-base-url": self.provider_url},
-                            proxies=self.proxy, timeout=20)
+                            proxies=self.proxy, timeout=10)
                         detail = r2.json()
                         body = str(detail.get("text") or "") + " " + str(detail.get("subject") or "")
                     except Exception:
@@ -444,7 +444,7 @@ class CFWorkerMailbox(BaseMailbox):
             payload["domain"] = self.domain
         r = requests.post(f"{self.api}/admin/new_address",
             json=payload, headers=self._headers(),
-            proxies=self.proxy, timeout=30)
+            proxies=self.proxy, timeout=15)
         print(f"[CFWorker] new_address status={r.status_code} resp={r.text[:200]}")
         data = r.json()
         email = data.get("email", data.get("address", ""))

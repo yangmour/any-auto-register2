@@ -59,7 +59,7 @@ def build_proxy_config(proxy_url: Optional[str]) -> Optional[Dict[str, str]]:
 @dataclass
 class RequestConfig:
     """HTTP 请求配置"""
-    timeout: int = 60
+    timeout: int = 30
     max_retries: int = 3
     retry_delay: float = 1.0
     impersonate: str = "chrome"
