@@ -254,7 +254,7 @@ class ChatGPTClient:
                     navigation=True,
                 ),
                 allow_redirects=True,
-                timeout=30,
+                timeout=60,
             )
             final_url = str(r.url)
             self._log(f"follow -> {r.status_code} {final_url}")
@@ -397,7 +397,7 @@ class ChatGPTClient:
                     navigation=True,
                 ),
                 allow_redirects=True,
-                timeout=30,
+                timeout=45,
             )
             return r.status_code == 200
         except Exception as e:
@@ -417,7 +417,7 @@ class ChatGPTClient:
                     referer=f"{self.BASE}/",
                     fetch_site="same-origin",
                 ),
-                timeout=30,
+                timeout=45,
             )
             
             if r.status_code == 200:
@@ -509,7 +509,7 @@ class ChatGPTClient:
                         navigation=True,
                     ),
                     allow_redirects=True,
-                    timeout=30,
+                    timeout=45,
                 )
                 
                 final_url = str(r.url)
@@ -601,7 +601,7 @@ class ChatGPTClient:
                     fetch_site="same-origin",
                 ),
                 allow_redirects=True,
-                timeout=30,
+                timeout=45,
             )
             return r.status_code == 200
         except Exception as e:
