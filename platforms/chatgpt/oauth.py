@@ -12,7 +12,7 @@ import urllib.parse
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from curl_cffi import requests as cffi_requests
+from core.http_client import build_proxy_config
 
 from .constants import (
     OAUTH_CLIENT_ID,
@@ -141,12 +141,7 @@ def _post_form(
         响应 JSON 数据
     """
     # 构建代理配置
-    proxies = None
-    if proxy_url:
-        proxies = {
-            "http": proxy_url,
-            "https": proxy_url,
-        }
+    proxies = build_proxy_config(proxy_url)
 
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",

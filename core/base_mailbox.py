@@ -4,6 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Any
+from .http_client import build_proxy_config
 
 
 @dataclass
@@ -261,7 +262,7 @@ class TempMailLolMailbox(BaseMailbox):
 
     def __init__(self, proxy: str = None):
         self.api = "https://api.tempmail.lol/v2"
-        self.proxy = {"http": proxy, "https": proxy} if proxy else None
+        self.proxy = build_proxy_config(proxy)
         self._token = None
         self._email = None
 
@@ -330,7 +331,7 @@ class DuckMailMailbox(BaseMailbox):
         self.api = api_url.rstrip("/")
         self.provider_url = provider_url
         self.bearer = bearer
-        self.proxy = {"http": proxy, "https": proxy} if proxy else None
+        self.proxy = build_proxy_config(proxy)
         self._token = None
         self._address = None
 
@@ -415,7 +416,7 @@ class CFWorkerMailbox(BaseMailbox):
         self.admin_token = admin_token
         self.domain = domain
         self.fingerprint = fingerprint
-        self.proxy = {"http": proxy, "https": proxy} if proxy else None
+        self.proxy = build_proxy_config(proxy)
         self._token = None
 
     def _headers(self) -> dict:
@@ -526,7 +527,7 @@ class MoeMailMailbox(BaseMailbox):
 
     def __init__(self, api_url: str = "https://sall.cc", proxy: str = None):
         self.api = api_url.rstrip("/")
-        self.proxy = {"http": proxy, "https": proxy} if proxy else None
+        self.proxy = build_proxy_config(proxy)
         self._session_token = None
         self._email = None
 
@@ -852,7 +853,7 @@ class FreemailMailbox(BaseMailbox):
         self.admin_token = admin_token
         self.username = username
         self.password = password
-        self.proxy = {"http": proxy, "https": proxy} if proxy else None
+        self.proxy = build_proxy_config(proxy)
         self._session = None
         self._email = None
 

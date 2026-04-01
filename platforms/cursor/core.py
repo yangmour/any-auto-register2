@@ -1,6 +1,7 @@
 """Cursor 注册协议核心实现"""
 import re, uuid, json, urllib.parse, random, string
 from typing import Optional, Callable
+from core.http_client import build_proxy_config
 
 AUTH   = "https://authenticator.cursor.sh"
 CURSOR = "https://cursor.com"
@@ -44,7 +45,7 @@ class CursorRegister:
         self.log = log_fn
         self.s = curl_req.Session(impersonate="safari17_0")
         if proxy:
-            self.s.proxies = {"http": proxy, "https": proxy}
+            self.s.proxies = build_proxy_config(proxy)
 
     def _base_headers(self, next_action, referer, boundary=None):
         ct = f"multipart/form-data; boundary={boundary}" if boundary else "application/x-www-form-urlencoded"
