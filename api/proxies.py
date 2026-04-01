@@ -4,7 +4,6 @@ from pydantic import BaseModel
 from typing import Optional
 from core.db import ProxyModel, get_session
 from core.proxy_pool import proxy_pool
-from core.http_client import normalize_proxy_url
 
 router = APIRouter(prefix="/proxies", tags=["proxies"])
 
@@ -27,15 +26,10 @@ def list_proxies(session: Session = Depends(get_session)):
 
 @router.post("")
 def add_proxy(body: ProxyCreate, session: Session = Depends(get_session)):
-    try:
-        normalized_url = normalize_proxy_url(body.url)
-    except ValueError as exc:
-        raise HTTPException(400, str(exc)) from exc
-
-    existing = session.exec(select(ProxyModel).where(ProxyModel.url == normalized_url)).first()
+    existing = session.exec(select(ProxyModel).where(ProxyModel.url == body.url)).first()
     if existing:
         raise HTTPException(400, "代理已存在")
-    p = ProxyModel(url=normalized_url, region=body.region)
+    p = ProxyModel(url=body.url, region=body.region)
     session.add(p)
     session.commit()
     session.refresh(p)
@@ -45,22 +39,16 @@ def add_proxy(body: ProxyCreate, session: Session = Depends(get_session)):
 @router.post("/bulk")
 def bulk_add_proxies(body: ProxyBulkCreate, session: Session = Depends(get_session)):
     added = 0
-    invalid: list[str] = []
     for url in body.proxies:
         url = url.strip()
         if not url:
             continue
-        try:
-            normalized_url = normalize_proxy_url(url)
-        except ValueError:
-            invalid.append(url)
-            continue
-        existing = session.exec(select(ProxyModel).where(ProxyModel.url == normalized_url)).first()
+        existing = session.exec(select(ProxyModel).where(ProxyModel.url == url)).first()
         if not existing:
-            session.add(ProxyModel(url=normalized_url, region=body.region))
+            session.add(ProxyModel(url=url, region=body.region))
             added += 1
     session.commit()
-    return {"added": added, "invalid": invalid}
+    return {"added": added}
 
 
 @router.delete("/{proxy_id}")

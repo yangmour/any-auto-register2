@@ -9,7 +9,6 @@ import json
 from typing import Optional, Dict, Any, Union, Tuple
 from dataclasses import dataclass
 import logging
-from urllib.parse import urlparse
 
 from curl_cffi import requests as cffi_requests
 from curl_cffi.requests import Session, Response
@@ -19,41 +18,6 @@ from curl_cffi.requests import Session, Response
 
 
 logger = logging.getLogger(__name__)
-
-
-SUPPORTED_PROXY_SCHEMES = {"http", "https", "socks5", "socks5h"}
-
-
-def normalize_proxy_url(proxy_url: Optional[str]) -> Optional[str]:
-    """标准化代理 URL，兼容 http/https/socks5/socks5h。"""
-    if not proxy_url:
-        return None
-
-    normalized = proxy_url.strip()
-    if not normalized:
-        return None
-
-    parsed = urlparse(normalized)
-    scheme = (parsed.scheme or "").lower()
-    if not scheme:
-        raise ValueError("代理地址缺少协议头，请使用 http://、https://、socks5:// 或 socks5h://")
-    if scheme not in SUPPORTED_PROXY_SCHEMES:
-        raise ValueError(f"不支持的代理协议: {scheme}，仅支持 http/https/socks5/socks5h")
-    if not parsed.hostname or not parsed.port:
-        raise ValueError("代理地址格式无效，请使用 scheme://[user:pass@]host:port")
-
-    return normalized
-
-
-def build_proxy_config(proxy_url: Optional[str]) -> Optional[Dict[str, str]]:
-    """构建 requests/curl_cffi 代理配置。"""
-    normalized = normalize_proxy_url(proxy_url)
-    if not normalized:
-        return None
-    return {
-        "http": normalized,
-        "https": normalized,
-    }
 
 
 @dataclass
@@ -92,14 +56,19 @@ class HTTPClient:
             config: 请求配置
             session: 可重用的会话对象
         """
-        self.proxy_url = normalize_proxy_url(proxy_url)
+        self.proxy_url = proxy_url
         self.config = config or RequestConfig()
         self._session = session
 
     @property
     def proxies(self) -> Optional[Dict[str, str]]:
         """获取代理配置"""
-        return build_proxy_config(self.proxy_url)
+        if not self.proxy_url:
+            return None
+        return {
+            "http": self.proxy_url,
+            "https": self.proxy_url,
+        }
 
     @property
     def session(self) -> Session:

@@ -146,12 +146,8 @@ export default function Proxies() {
           <Input.TextArea
             value={newProxy}
             onChange={(e) => setNewProxy(e.target.value)}
-            placeholder={[
-              '支持 http://、https://、socks5://、socks5h://',
-              '例如: http://user:pass@host:port',
-              '例如: socks5://user:pass@host:port',
-            ].join('\n')}
-            rows={4}
+            placeholder="http://user:pass@host:port"
+            rows={3}
             style={{ fontFamily: 'monospace' }}
           />
           <Space>
