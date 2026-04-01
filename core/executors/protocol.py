@@ -1,7 +1,6 @@
 """纯协议执行器 - 基于 curl_cffi"""
 from curl_cffi import requests as curl_requests
 from ..base_executor import BaseExecutor, Response
-from ..http_client import build_proxy_config
 
 
 class ProtocolExecutor(BaseExecutor):
@@ -10,7 +9,7 @@ class ProtocolExecutor(BaseExecutor):
         self.s = curl_requests.Session()
         self.s.impersonate = impersonate
         if proxy:
-            self.s.proxies = build_proxy_config(proxy)
+            self.s.proxies = {"http": proxy, "https": proxy}
         self.s.headers.update({
             "user-agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                            "AppleWebKit/537.36 (KHTML, like Gecko) "

@@ -18,7 +18,6 @@ import re, json, time, base64, random, string, os
 from urllib.parse import urlencode, urlparse, parse_qs
 from curl_cffi import requests as curl_requests
 import requests as std_requests
-from core.http_client import build_proxy_config
 
 # ─── 配置 ───────────────────────────────────────────────────────────────────
 
@@ -94,7 +93,7 @@ class OpenBlockLabsRegister:
         self.s = curl_requests.Session()
         self.s.impersonate = "chrome131"
         if proxy:
-            self.s.proxies = build_proxy_config(proxy)
+            self.s.proxies = {"http": proxy, "https": proxy}
         self.s.headers.update({
             "user-agent": UA,
             "accept-language": "zh-CN,zh;q=0.9",
