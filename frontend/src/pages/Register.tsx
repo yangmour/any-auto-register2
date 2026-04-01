@@ -181,7 +181,7 @@ export default function Register() {
           </Space>
           <Space style={{ width: '100%' }}>
             <Form.Item name="proxy" label="代理 (可选)" style={{ flex: 1 }}>
-              <Input placeholder="http://user:pass@host:port" />
+              <Input placeholder="支持 http://、https://、socks5://、socks5h://" />
             </Form.Item>
           </Space>
         </Card>

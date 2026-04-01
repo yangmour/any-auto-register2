@@ -2,6 +2,7 @@
 from typing import Optional
 from sqlmodel import Session, select
 from .db import ProxyModel, engine
+from .http_client import build_proxy_config
 import time, threading, random
 from datetime import datetime, timezone
 
@@ -58,8 +59,9 @@ class ProxyPool:
         results = {"ok": 0, "fail": 0}
         for p in proxies:
             try:
+                proxy_config = build_proxy_config(p.url)
                 r = requests.get("https://httpbin.org/ip",
-                                 proxies={"http": p.url, "https": p.url},
+                                 proxies=proxy_config,
                                  timeout=8)
                 if r.status_code == 200:
                     self.report_success(p.url)
