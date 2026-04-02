@@ -38,6 +38,9 @@ export default function Register() {
         solver_url: cfg.solver_url || 'http://localhost:8889',
         yescaptcha_key: cfg.yescaptcha_key || '',
         moemail_api_url: cfg.moemail_api_url || '',
+        outlook_browser_path: cfg.outlook_browser_path || '',
+        outlook_bot_protection_wait: cfg.outlook_bot_protection_wait || 12,
+        outlook_max_captcha_retries: cfg.outlook_max_captcha_retries || 2,
         laoudo_auth: cfg.laoudo_auth || '',
         laoudo_email: cfg.laoudo_email || '',
         laoudo_account_id: cfg.laoudo_account_id || '',
@@ -79,6 +82,9 @@ export default function Register() {
           laoudo_email: values.laoudo_email,
           laoudo_account_id: values.laoudo_account_id,
           moemail_api_url: values.moemail_api_url,
+          outlook_browser_path: values.outlook_browser_path,
+          outlook_bot_protection_wait: values.outlook_bot_protection_wait,
+          outlook_max_captcha_retries: values.outlook_max_captcha_retries,
           duckmail_api_url: values.duckmail_api_url,
           duckmail_provider_url: values.duckmail_provider_url,
           duckmail_bearer: values.duckmail_bearer,
@@ -183,6 +189,7 @@ export default function Register() {
             <Select
               options={[
                 { value: 'moemail', label: 'MoeMail (sall.cc)' },
+                { value: 'outlook_register', label: 'OutlookRegister (outlook.com)' },
                 { value: 'tempmail_lol', label: 'TempMail.lol' },
                 { value: 'duckmail', label: 'DuckMail' },
                 { value: 'freemail', label: 'Freemail' },
@@ -202,6 +209,19 @@ export default function Register() {
               </Form.Item>
               <Form.Item name="laoudo_auth" label="JWT Token">
                 <Input placeholder="eyJ..." />
+              </Form.Item>
+            </>
+          )}
+          {mailProvider === 'outlook_register' && (
+            <>
+              <Form.Item name="outlook_browser_path" label="浏览器路径（可选）">
+                <Input placeholder="Patchright 可留空" />
+              </Form.Item>
+              <Form.Item name="outlook_bot_protection_wait" label="机器人保护等待秒数">
+                <InputNumber min={0} precision={0} style={{ width: '100%' }} placeholder="12" />
+              </Form.Item>
+              <Form.Item name="outlook_max_captcha_retries" label="验证码最大重试次数">
+                <InputNumber min={0} precision={0} style={{ width: '100%' }} placeholder="2" />
               </Form.Item>
             </>
           )}

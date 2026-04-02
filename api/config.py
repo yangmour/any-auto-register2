@@ -13,6 +13,7 @@ CONFIG_KEYS = [
     "freemail_api_url", "freemail_admin_token", "freemail_username", "freemail_password",
     "moemail_api_url",
     "mail_provider",
+    "outlook_browser_path", "outlook_bot_protection_wait", "outlook_max_captcha_retries",
     "cfworker_api_url", "cfworker_admin_token", "cfworker_domain", "cfworker_fingerprint",
     "luckmail_base_url", "luckmail_api_key", "luckmail_email_type", "luckmail_domain",
     "cpa_api_url", "cpa_api_key",

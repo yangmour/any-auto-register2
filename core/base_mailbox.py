@@ -128,6 +128,15 @@ def create_mailbox(provider: str, extra: dict = None, proxy: str = None) -> 'Bas
             email_type=extra.get("luckmail_email_type", ""),
             domain=extra.get("luckmail_domain", ""),
         )
+    elif provider == "outlook_register":
+        from .outlook_register_mailbox import OutlookRegisterMailbox
+
+        return OutlookRegisterMailbox(
+            browser_path=extra.get("outlook_browser_path", ""),
+            bot_protection_wait=extra.get("outlook_bot_protection_wait", 12),
+            max_captcha_retries=extra.get("outlook_max_captcha_retries", 2),
+            proxy=proxy,
+        )
     else:  # laoudo
         return LaoudoMailbox(
             auth_token=extra.get("laoudo_auth", ""),

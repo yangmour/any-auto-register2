@@ -19,6 +19,7 @@ const SELECT_FIELDS: Record<string, { label: string; value: string }[]> = {
     { label: 'TempMail.lol（自动生成）', value: 'tempmail_lol' },
     { label: 'DuckMail（自动生成）', value: 'duckmail' },
     { label: 'MoeMail (sall.cc)', value: 'moemail' },
+    { label: 'OutlookRegister（自动注册 Outlook）', value: 'outlook_register' },
     { label: 'Freemail（自建 CF Worker）', value: 'freemail' },
     { label: 'CF Worker（自建域名）', value: 'cfworker' },
     { label: 'LuckMail（订单接码 / 已购邮箱）', value: 'luckmail' },
@@ -84,6 +85,15 @@ const TAB_ITEMS = [
         title: 'MoeMail',
         desc: '自动注册账号并生成临时邮箱',
         fields: [{ key: 'moemail_api_url', label: 'API URL', placeholder: 'https://sall.cc' }],
+      },
+      {
+        title: 'OutlookRegister',
+        desc: '复用外部 OutlookRegister 流程，自动注册 outlook.com 邮箱并在浏览器会话内收验证码',
+        fields: [
+          { key: 'outlook_browser_path', label: '浏览器路径（可选）', placeholder: 'Patchright 可留空' },
+          { key: 'outlook_bot_protection_wait', label: '机器人保护等待秒数', placeholder: '12' },
+          { key: 'outlook_max_captcha_retries', label: '验证码最大重试次数', placeholder: '2' },
+        ],
       },
       {
         title: 'TempMail.lol',
