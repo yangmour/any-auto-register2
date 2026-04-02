@@ -133,6 +133,43 @@ class OutlookRegisterMailbox(BaseMailbox):
         except Exception:
             return ""
 
+    def _collect_challenge_markers(self) -> list[str]:
+        if self._page is None:
+            return []
+
+        markers: list[str] = []
+        locator_checks = [
+            ('iframe[title="验证质询"]', "challenge-frame"),
+            ("iframe#enforcementFrame", "challenge-frame"),
+            ('iframe[src*="challenge"]', "challenge-frame"),
+            ('iframe[src*="captcha"]', "challenge-frame"),
+            ('iframe[src*="arkoselabs"]', "challenge-frame"),
+            ('iframe[name*="challenge"]', "challenge-frame"),
+            ('iframe[id*="challenge"]', "challenge-frame"),
+            ('iframe[class*="challenge"]', "challenge-frame"),
+        ]
+        for selector, marker in locator_checks:
+            try:
+                if self._page.locator(selector).count() > 0:
+                    markers.append(marker)
+            except Exception:
+                continue
+
+        try:
+            for frame in self._page.frames:
+                if frame == self._page.main_frame:
+                    continue
+                descriptor = " ".join(
+                    part for part in (getattr(frame, "name", ""), getattr(frame, "url", "")) if part
+                ).lower()
+                if any(token in descriptor for token in ("challenge", "captcha", "enforcement", "arkoselabs")):
+                    markers.append("challenge-frame")
+                    break
+        except Exception:
+            pass
+
+        return list(dict.fromkeys(markers))
+
     def _get_human_verification_reason(self) -> str:
         if self._page is None:
             return ""
@@ -140,6 +177,7 @@ class OutlookRegisterMailbox(BaseMailbox):
         page_text = self._capture_page_text()
         page_url = self._get_page_url()
         on_signup_live = "signup.live.com" in page_url.lower()
+        challenge_markers = self._collect_challenge_markers()
 
         strong_markers = [
             "证明你不是机器人",
@@ -154,16 +192,7 @@ class OutlookRegisterMailbox(BaseMailbox):
         strong_hits = [marker for marker in strong_markers if marker in page_text]
         soft_hits = [marker for marker in soft_markers if marker in page_text]
 
-        has_challenge_frame = False
-        for selector in ('iframe[title="验证质询"]', "iframe#enforcementFrame"):
-            try:
-                if self._page.locator(selector).count() > 0:
-                    has_challenge_frame = True
-                    break
-            except Exception:
-                continue
-
-        if not strong_hits and not has_challenge_frame and not (soft_hits and on_signup_live):
+        if not strong_hits and not challenge_markers and not (soft_hits and on_signup_live):
             return ""
 
         observed = []
@@ -171,8 +200,7 @@ class OutlookRegisterMailbox(BaseMailbox):
             observed.extend(strong_hits[:2])
         if soft_hits:
             observed.extend(soft_hits[:2])
-        if has_challenge_frame:
-            observed.append("challenge-frame")
+        observed.extend(challenge_markers)
         observed_text = ", ".join(dict.fromkeys(observed)) or "未识别特征"
 
         return (
@@ -337,43 +365,7 @@ class OutlookRegisterMailbox(BaseMailbox):
         if page.get_by_text("一些异常活动").count() > 0 or page.get_by_text("此站点正在维护，暂时无法使用，请稍后重试。").count() > 0:
             raise RuntimeError("当前 IP 注册频率过快，Outlook 页面已拦截")
 
-        if page.locator("iframe#enforcementFrame").count() > 0:
-            self._raise_if_human_verification_gate()
-            raise RuntimeError("Outlook 返回了 Microsoft 验证挑战页，当前流程不会自动通过")
-
-        try:
-            frame1 = page.frame_locator('iframe[title="验证质询"]')
-            frame2 = frame1.frame_locator('iframe[style*="display: block"]')
-            for _ in range(self.max_captcha_retries + 1):
-                self._raise_if_human_verification_gate()
-                frame2.locator('[aria-label="可访问性挑战"]').click(timeout=15000)
-                frame2.locator('[aria-label="再次按下"]').click(timeout=30000)
-
-                try:
-                    page.locator(".draw").wait_for(state="detached", timeout=15000)
-                except Exception:
-                    self._raise_if_human_verification_gate()
-                    continue
-
-                try:
-                    page.locator('[role="status"][aria-label="正在加载..."]').wait_for(timeout=5000)
-                    page.wait_for_timeout(8000)
-                except Exception:
-                    pass
-
-                self._raise_if_human_verification_gate()
-                if page.get_by_text("一些异常活动").count() > 0 or page.get_by_text("此站点正在维护，暂时无法使用，请稍后重试。").count() > 0:
-                    raise RuntimeError("通过验证码后仍被 Outlook 频率限制拦截")
-
-                if frame2.locator('[aria-label="可访问性挑战"]').count() == 0:
-                    break
-            else:
-                self._raise_if_human_verification_gate()
-                raise RuntimeError("Outlook 验证码重试次数耗尽")
-        except RuntimeError:
-            raise
-        except Exception as e:
-            raise RuntimeError(f"Outlook 验证码处理失败: {e}") from e
+        self._raise_if_human_verification_gate()
 
         self._log(f"[OutlookRegister] 注册成功: {local_part}@outlook.com")
 

@@ -75,6 +75,8 @@ class RegistrationEngineV2:
             "人工验证",
             "不是机器人",
             "长按该按钮",
+            "challenge-frame",
+            "enforcementframe",
             "手动完成",
             "microsoft 风控",
             "风控挑战",

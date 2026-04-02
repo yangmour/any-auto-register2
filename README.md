@@ -15,6 +15,10 @@
 - 本项目基于 [lxf746/any-auto-register](https://github.com/lxf746/any-auto-register.git) 二次开发。
 - 当前仓库在原项目基础上，扩展了本地插件拉起、Grok 账号回填、任务历史批量删除、并发注册修复等能力。
 
+## 文档索引
+
+- [Claude Code CTF 提示词版本集](docs/claude-code-ctf-prompts.md)
+
 ## 插件与依赖地址说明
 
 ### 1. 临时邮箱项目来源
