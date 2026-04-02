@@ -125,6 +125,98 @@ class OutlookRegisterMailbox(BaseMailbox):
             return
         self._page.wait_for_timeout(max(50, int(self.bot_protection_wait_ms * factor)))
 
+    def _get_page_url(self) -> str:
+        if self._page is None:
+            return ""
+        try:
+            return str(self._page.url or "")
+        except Exception:
+            return ""
+
+    def _get_human_verification_reason(self) -> str:
+        if self._page is None:
+            return ""
+
+        page_text = self._capture_page_text()
+        page_url = self._get_page_url()
+        on_signup_live = "signup.live.com" in page_url.lower()
+
+        strong_markers = [
+            "证明你不是机器人",
+            "长按该按钮",
+            "验证质询",
+            "请帮忙验证",
+        ]
+        soft_markers = [
+            "请再试一次",
+            "遇到问题",
+        ]
+        strong_hits = [marker for marker in strong_markers if marker in page_text]
+        soft_hits = [marker for marker in soft_markers if marker in page_text]
+
+        has_challenge_frame = False
+        for selector in ('iframe[title="验证质询"]', "iframe#enforcementFrame"):
+            try:
+                if self._page.locator(selector).count() > 0:
+                    has_challenge_frame = True
+                    break
+            except Exception:
+                continue
+
+        if not strong_hits and not has_challenge_frame and not (soft_hits and on_signup_live):
+            return ""
+
+        observed = []
+        if strong_hits:
+            observed.extend(strong_hits[:2])
+        if soft_hits:
+            observed.extend(soft_hits[:2])
+        if has_challenge_frame:
+            observed.append("challenge-frame")
+        observed_text = ", ".join(dict.fromkeys(observed)) or "未识别特征"
+
+        return (
+            "Outlook 命中 Microsoft 风控挑战，当前会话未通过人工验证，"
+            f"url={page_url or 'unknown'}，特征={observed_text}"
+        )
+
+    def _is_human_verification_gate(self) -> bool:
+        return bool(self._get_human_verification_reason())
+
+    def _log_page_diagnostics(self, prefix: str) -> None:
+        page_url = self._get_page_url()
+        page_text = self._capture_page_text()
+        snippet = " ".join(page_text.split())[:220] if page_text else ""
+        if page_url:
+            self._log(f"{prefix} URL: {page_url}")
+        if snippet:
+            self._log(f"{prefix} 页面摘要: {snippet}")
+
+    def _raise_if_human_verification_gate(self) -> None:
+        reason = self._get_human_verification_reason()
+        if reason:
+            self._log_page_diagnostics("[OutlookRegister] Microsoft 风控挑战")
+            raise RuntimeError(reason)
+
+    def _click_primary_button(self, timeout: int = 5000) -> None:
+        if self._page is None:
+            raise RuntimeError("Outlook 浏览器未启动")
+
+        self._raise_if_human_verification_gate()
+        button = self._page.locator('[data-testid="primaryButton"]')
+        button.wait_for(state="visible", timeout=timeout)
+        self._page.wait_for_function(
+            """
+            () => {
+              const button = document.querySelector('[data-testid="primaryButton"]');
+              return !!button && !button.disabled && button.getAttribute('aria-disabled') !== 'true';
+            }
+            """,
+            timeout=timeout,
+        )
+        self._raise_if_human_verification_gate()
+        button.click(timeout=timeout)
+
     def _dismiss_optional_dialogs(self) -> None:
         if self._page is None:
             return
@@ -175,6 +267,7 @@ class OutlookRegisterMailbox(BaseMailbox):
                 timeout=20000,
                 wait_until="domcontentloaded",
             )
+            self._raise_if_human_verification_gate()
             page.get_by_text("同意并继续").wait_for(timeout=30000)
             self._wait_ms(0.10)
             page.get_by_text("同意并继续").click(timeout=30000)
@@ -188,7 +281,7 @@ class OutlookRegisterMailbox(BaseMailbox):
                 delay=max(10, int(self.bot_protection_wait_ms * 0.0006)),
                 timeout=10000,
             )
-            page.locator('[data-testid="primaryButton"]').click(timeout=5000)
+            self._click_primary_button(timeout=8000)
             self._wait_ms(0.02)
             page.locator('[type="password"]').type(
                 password,
@@ -196,7 +289,7 @@ class OutlookRegisterMailbox(BaseMailbox):
                 timeout=10000,
             )
             self._wait_ms(0.02)
-            page.locator('[data-testid="primaryButton"]').click(timeout=5000)
+            self._click_primary_button(timeout=8000)
 
             self._wait_ms(0.03)
             page.locator('[name="BirthYear"]').fill(year, timeout=10000)
@@ -214,7 +307,7 @@ class OutlookRegisterMailbox(BaseMailbox):
                 self._wait_ms(0.03)
                 page.locator(f'[role="option"]:text-is("{day}日")').click()
 
-            page.locator('[data-testid="primaryButton"]').click(timeout=5000)
+            self._click_primary_button(timeout=8000)
             page.locator("#lastNameInput").type(
                 last_name,
                 delay=max(6, int(self.bot_protection_wait_ms * 0.0002)),
@@ -227,7 +320,7 @@ class OutlookRegisterMailbox(BaseMailbox):
             if elapsed_ms < self.bot_protection_wait_ms:
                 page.wait_for_timeout(self.bot_protection_wait_ms - elapsed_ms)
 
-            page.locator('[data-testid="primaryButton"]').click(timeout=5000)
+            self._click_primary_button(timeout=8000)
             try:
                 page.locator('span > [href="https://go.microsoft.com/fwlink/?LinkID=521839"]').wait_for(
                     state="detached",
@@ -239,22 +332,27 @@ class OutlookRegisterMailbox(BaseMailbox):
         except Exception as e:
             raise RuntimeError(f"Outlook 表单填写失败: {e}") from e
 
+        self._raise_if_human_verification_gate()
+
         if page.get_by_text("一些异常活动").count() > 0 or page.get_by_text("此站点正在维护，暂时无法使用，请稍后重试。").count() > 0:
             raise RuntimeError("当前 IP 注册频率过快，Outlook 页面已拦截")
 
         if page.locator("iframe#enforcementFrame").count() > 0:
-            raise RuntimeError("Outlook 返回了非按压类型验证码，当前流程暂不支持")
+            self._raise_if_human_verification_gate()
+            raise RuntimeError("Outlook 返回了 Microsoft 验证挑战页，当前流程不会自动通过")
 
         try:
             frame1 = page.frame_locator('iframe[title="验证质询"]')
             frame2 = frame1.frame_locator('iframe[style*="display: block"]')
             for _ in range(self.max_captcha_retries + 1):
+                self._raise_if_human_verification_gate()
                 frame2.locator('[aria-label="可访问性挑战"]').click(timeout=15000)
                 frame2.locator('[aria-label="再次按下"]').click(timeout=30000)
 
                 try:
                     page.locator(".draw").wait_for(state="detached", timeout=15000)
                 except Exception:
+                    self._raise_if_human_verification_gate()
                     continue
 
                 try:
@@ -263,12 +361,14 @@ class OutlookRegisterMailbox(BaseMailbox):
                 except Exception:
                     pass
 
+                self._raise_if_human_verification_gate()
                 if page.get_by_text("一些异常活动").count() > 0 or page.get_by_text("此站点正在维护，暂时无法使用，请稍后重试。").count() > 0:
                     raise RuntimeError("通过验证码后仍被 Outlook 频率限制拦截")
 
                 if frame2.locator('[aria-label="可访问性挑战"]').count() == 0:
                     break
             else:
+                self._raise_if_human_verification_gate()
                 raise RuntimeError("Outlook 验证码重试次数耗尽")
         except RuntimeError:
             raise

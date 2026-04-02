@@ -71,6 +71,19 @@ class RegistrationEngineV2:
 
     def _should_retry(self, message: str) -> bool:
         text = str(message or "").lower()
+        non_retriable_markers = [
+            "人工验证",
+            "不是机器人",
+            "长按该按钮",
+            "手动完成",
+            "microsoft 风控",
+            "风控挑战",
+            "未通过人工验证",
+            "验证质询",
+            "频率限制拦截",
+        ]
+        if any(marker.lower() in text for marker in non_retriable_markers):
+            return False
         retriable_markers = [
             "tls",
             "ssl",
