@@ -8,7 +8,7 @@ from core.registry import register
 @register
 class ChatGPTPlatform(BasePlatform):
     name = "chatgpt"
-    display_name = "ChatGPT"
+    display_name = "OpenAI / Codex CLI"
     version = "1.0.0"
 
     def __init__(self, config: RegisterConfig = None, mailbox: BaseMailbox = None):

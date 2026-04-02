@@ -8,11 +8,7 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons'
 import { apiFetch } from '@/lib/utils'
-
-const PLATFORM_COLORS: Record<string, string> = {
-  trae: '#3b82f6',
-  cursor: '#10b981',
-}
+import { PLATFORM_COLORS, getPlatformLabel } from '@/lib/platformMeta'
 
 const STATUS_COLORS: Record<string, string> = {
   registered: 'default',
@@ -103,7 +99,7 @@ export default function Dashboard() {
               Object.entries(stats.by_platform || {}).map(([platform, count]: any) => (
                 <div key={platform} style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <Tag color={PLATFORM_COLORS[platform] || 'default'}>{platform}</Tag>
+                    <Tag color={PLATFORM_COLORS[platform] || 'default'}>{getPlatformLabel(platform)}</Tag>
                     <span>{count}</span>
                   </div>
                   <Progress

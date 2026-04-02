@@ -19,6 +19,7 @@ import {
 } from '@ant-design/icons'
 import { apiFetch } from '@/lib/utils'
 import { getExecutorOptions, normalizeExecutorForPlatform } from '@/lib/registerOptions'
+import { PLATFORM_OPTIONS } from '@/lib/platformMeta'
 
 const { Text } = Typography
 
@@ -29,11 +30,12 @@ export default function Register() {
 
   useEffect(() => {
     apiFetch('/config').then((cfg) => {
-      const currentPlatform = form.getFieldValue('platform') || 'trae'
+      const currentPlatform = form.getFieldValue('platform') || 'chatgpt'
       form.setFieldsValue({
         executor_type: normalizeExecutorForPlatform(currentPlatform, cfg.default_executor),
         captcha_solver: cfg.default_captcha_solver || 'yescaptcha',
         mail_provider: cfg.mail_provider || 'moemail',
+        solver_url: cfg.solver_url || 'http://localhost:8889',
         yescaptcha_key: cfg.yescaptcha_key || '',
         moemail_api_url: cfg.moemail_api_url || '',
         laoudo_auth: cfg.laoudo_auth || '',
@@ -137,7 +139,7 @@ export default function Register() {
       </div>
 
       <Form form={form} layout="vertical" onFinish={submit} initialValues={{
-        platform: 'trae',
+        platform: 'chatgpt',
         executor_type: 'protocol',
         captcha_solver: 'yescaptcha',
         mail_provider: 'moemail',
@@ -147,17 +149,7 @@ export default function Register() {
       }}>
         <Card title="基本配置" style={{ marginBottom: 16 }}>
           <Form.Item name="platform" label="平台" rules={[{ required: true }]}>
-            <Select
-              options={[
-                { value: 'chatgpt', label: 'ChatGPT' },
-                { value: 'trae', label: 'Trae.ai' },
-                { value: 'cursor', label: 'Cursor' },
-                { value: 'kiro', label: 'Kiro' },
-                { value: 'grok', label: 'Grok' },
-                { value: 'tavily', label: 'Tavily' },
-                { value: 'openblocklabs', label: 'OpenBlockLabs' },
-              ]}
-            />
+            <Select options={PLATFORM_OPTIONS as any} />
           </Form.Item>
           <Form.Item name="executor_type" label="执行器" rules={[{ required: true }]}>
             <Select options={executorOptions} />

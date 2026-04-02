@@ -28,6 +28,7 @@ import {
 } from '@ant-design/icons'
 import { apiFetch, API_BASE } from '@/lib/utils'
 import { normalizeExecutorForPlatform } from '@/lib/registerOptions'
+import { getPlatformLabel } from '@/lib/platformMeta'
 
 const { Text } = Typography
 
@@ -165,7 +166,7 @@ function ActionMenu({ acc, onRefresh }: { acc: any; onRefresh: () => void }) {
 
 export default function Accounts() {
   const { platform } = useParams<{ platform: string }>()
-  const [currentPlatform, setCurrentPlatform] = useState(platform || 'trae')
+  const [currentPlatform, setCurrentPlatform] = useState(platform || 'chatgpt')
   const [accounts, setAccounts] = useState<any[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -297,6 +298,7 @@ export default function Accounts() {
             laoudo_email: cfg.laoudo_email,
             laoudo_account_id: cfg.laoudo_account_id,
             yescaptcha_key: cfg.yescaptcha_key,
+            solver_url: cfg.solver_url || 'http://localhost:8889',
             moemail_api_url: cfg.moemail_api_url,
             duckmail_address: cfg.duckmail_address,
             duckmail_password: cfg.duckmail_password,
@@ -311,6 +313,10 @@ export default function Accounts() {
             cfworker_admin_token: cfg.cfworker_admin_token,
             cfworker_domain: cfg.cfworker_domain,
             cfworker_fingerprint: cfg.cfworker_fingerprint,
+            luckmail_base_url: cfg.luckmail_base_url,
+            luckmail_api_key: cfg.luckmail_api_key,
+            luckmail_email_type: cfg.luckmail_email_type,
+            luckmail_domain: cfg.luckmail_domain,
           },
         }),
       })
@@ -465,7 +471,7 @@ export default function Accounts() {
       />
 
       <Modal
-        title={`注册 ${currentPlatform}`}
+        title={`注册 ${getPlatformLabel(currentPlatform)}`}
         open={registerModalOpen}
         onCancel={() => { setRegisterModalOpen(false); setTaskId(null); registerForm.resetFields(); }}
         footer={null}

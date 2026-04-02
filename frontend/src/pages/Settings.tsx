@@ -44,7 +44,10 @@ const TAB_ITEMS = [
       {
         title: '默认注册方式',
         desc: '控制注册任务如何执行',
-        fields: [{ key: 'default_executor', label: '执行器类型', type: 'select' }],
+        fields: [
+          { key: 'default_executor', label: '执行器类型', type: 'select' },
+          { key: 'solver_url', label: '本地 Solver URL', placeholder: 'http://localhost:8889' },
+        ],
       },
     ],
   },
@@ -108,7 +111,7 @@ const TAB_ITEMS = [
       },
       {
         title: 'LuckMail',
-        desc: 'ChatGPT 走购买邮箱，其他平台继续走订单接码老逻辑',
+        desc: 'OpenAI / Codex CLI 走购买邮箱，其他平台继续走订单接码老逻辑',
         fields: [
           { key: 'luckmail_base_url', label: '平台地址', placeholder: 'https://mails.luckyous.com' },
           { key: 'luckmail_api_key', label: 'API Key', secret: true },
@@ -135,7 +138,7 @@ const TAB_ITEMS = [
   },
   {
     key: 'chatgpt',
-    label: 'ChatGPT',
+    label: 'OpenAI / Codex CLI',
     icon: <ApiOutlined />,
     sections: [
       {
@@ -253,7 +256,7 @@ function ConfigField({ field }: { field: FieldConfig }) {
   const options = SELECT_FIELDS[field.key]
   const helpText =
     field.key === 'default_executor'
-      ? '仅对支持的平台生效；ChatGPT、Cursor、Grok、Kiro、Tavily、Trae 支持浏览器模式，OpenBlockLabs 仅支持纯协议。'
+      ? '仅对支持的平台生效；OpenAI / Codex CLI、Cursor、Grok、Kiro、Tavily、Trae 支持浏览器模式，OpenBlockLabs 仅支持纯协议。'
       : undefined
 
   return (

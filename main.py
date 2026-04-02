@@ -67,7 +67,7 @@ async def lifespan(app: FastAPI):
     stop()
 
 
-app = FastAPI(title="Account Manager", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="OpenAI / Codex CLI 新注册机", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

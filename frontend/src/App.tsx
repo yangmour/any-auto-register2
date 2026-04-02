@@ -124,7 +124,7 @@ function AppContent() {
                   color: currentTheme.token?.colorText,
                 }}
               >
-                Account Manager
+                OpenAI / Codex CLI 注册机
               </span>
             )}
           </div>

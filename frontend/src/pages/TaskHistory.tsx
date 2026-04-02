@@ -3,6 +3,7 @@ import { Card, Table, Select, Button, Tag, Space, Popconfirm, Typography, messag
 import type { TableColumnsType } from 'antd'
 import { ReloadOutlined, DeleteOutlined } from '@ant-design/icons'
 import { apiFetch } from '@/lib/utils'
+import { PLATFORM_OPTIONS, getPlatformLabel } from '@/lib/platformMeta'
 
 const { Text } = Typography
 
@@ -80,7 +81,7 @@ export default function TaskHistory() {
       dataIndex: 'platform',
       key: 'platform',
       width: 100,
-      render: (text: string) => <Tag>{text}</Tag>,
+      render: (text: string) => <Tag>{getPlatformLabel(text)}</Tag>,
     },
     {
       title: '邮箱',
@@ -136,8 +137,7 @@ export default function TaskHistory() {
             style={{ width: 120 }}
             options={[
               { value: '', label: '全部平台' },
-              { value: 'trae', label: 'Trae' },
-              { value: 'cursor', label: 'Cursor' },
+              ...PLATFORM_OPTIONS,
             ]}
           />
           <Button icon={<ReloadOutlined spin={loading} />} onClick={load} loading={loading} />
