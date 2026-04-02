@@ -34,6 +34,10 @@ const SELECT_FIELDS: Record<string, { label: string; value: string }[]> = {
     { label: '本地 Solver (Camoufox)', value: 'local_solver' },
     { label: '手动', value: 'manual' },
   ],
+  cpa_cleanup_enabled: [
+    { label: '关闭', value: 'false' },
+    { label: '开启', value: 'true' },
+  ],
 }
 
 const TAB_ITEMS = [
@@ -157,6 +161,8 @@ const TAB_ITEMS = [
         fields: [
           { key: 'cpa_api_url', label: 'API URL', placeholder: 'https://your-cpa.example.com' },
           { key: 'cpa_api_key', label: 'API Key', secret: true },
+          { key: 'cpa_cleanup_enabled', label: '定时清理 CPA', type: 'select' },
+          { key: 'cpa_cleanup_interval_seconds', label: '清理间隔（秒）', placeholder: '43200' },
         ],
       },
       {

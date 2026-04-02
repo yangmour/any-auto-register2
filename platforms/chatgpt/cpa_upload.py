@@ -8,6 +8,7 @@ import logging
 from typing import Tuple
 from datetime import datetime, timezone, timedelta
 import hashlib
+from urllib.parse import quote
 
 from curl_cffi import requests as cffi_requests
 from curl_cffi import CurlMime
@@ -254,6 +255,183 @@ def upload_to_cpa(
     finally:
         if mime:
             mime.close()
+
+
+def _make_cpa_headers(api_key: str) -> dict:
+    return {
+        "Authorization": f"Bearer {api_key or ''}",
+    }
+
+
+def _normalize_email(value: str) -> str:
+    return str(value or "").strip().lower()
+
+
+def _extract_cpa_items(data) -> list:
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        for key in ("items", "data", "list", "files", "results"):
+            value = data.get(key)
+            if isinstance(value, list):
+                return value
+    return []
+
+
+def _item_text(item: dict, key: str) -> str:
+    return str(item.get(key) or "").strip()
+
+
+def _collect_item_identifiers(item: dict) -> list[str]:
+    identifiers = []
+    for key in ("id", "file_id", "auth_file_id", "filename", "file_name", "name", "key"):
+        value = _item_text(item, key)
+        if value and value not in identifiers:
+            identifiers.append(value)
+    email = _normalize_email(item.get("email"))
+    if email:
+        for value in (f"{email}.json", email):
+            if value not in identifiers:
+                identifiers.append(value)
+    return identifiers
+
+
+def _item_matches_email(item: dict, email: str) -> bool:
+    target = _normalize_email(email)
+    if not target:
+        return False
+
+    item_email = _normalize_email(item.get("email"))
+    if item_email == target:
+        return True
+
+    for key in ("filename", "file_name", "name", "key"):
+        value = _item_text(item, key).lower()
+        if value == f"{target}.json" or value == target:
+            return True
+    return False
+
+
+def list_cpa_auth_files(
+    api_url: str = None,
+    api_key: str = None,
+) -> Tuple[bool, list | str]:
+    if not api_url:
+        api_url = _get_config_value("cpa_api_url")
+    if not api_key:
+        api_key = _get_config_value("cpa_api_key")
+    if not api_url:
+        return False, "CPA API URL 未配置"
+
+    url = f"{api_url.rstrip('/')}/v0/management/auth-files"
+    try:
+        response = cffi_requests.get(
+            url,
+            headers=_make_cpa_headers(api_key),
+            proxies=None,
+            verify=False,
+            timeout=30,
+            impersonate="chrome110",
+        )
+        if response.status_code != 200:
+            return False, f"列出 CPA 文件失败: HTTP {response.status_code}"
+        try:
+            data = response.json()
+        except Exception as exc:
+            return False, f"CPA 列表返回非 JSON: {exc}"
+        return True, _extract_cpa_items(data)
+    except Exception as e:
+        logger.error(f"CPA 列表查询异常: {e}")
+        return False, f"列出 CPA 文件异常: {e}"
+
+
+def delete_cpa_auth_file(
+    identifier: str,
+    api_url: str = None,
+    api_key: str = None,
+) -> Tuple[bool, str]:
+    if not api_url:
+        api_url = _get_config_value("cpa_api_url")
+    if not api_key:
+        api_key = _get_config_value("cpa_api_key")
+    if not api_url:
+        return False, "CPA API URL 未配置"
+
+    safe_identifier = quote(str(identifier or "").strip(), safe="")
+    if not safe_identifier:
+        return False, "缺少待删除标识"
+
+    url = f"{api_url.rstrip('/')}/v0/management/auth-files/{safe_identifier}"
+    try:
+        response = cffi_requests.delete(
+            url,
+            headers=_make_cpa_headers(api_key),
+            proxies=None,
+            verify=False,
+            timeout=30,
+            impersonate="chrome110",
+        )
+        if response.status_code in (200, 202, 204, 404):
+            return True, "删除成功" if response.status_code != 404 else "文件已不存在"
+        return False, f"删除失败: HTTP {response.status_code} - {response.text[:200]}"
+    except Exception as e:
+        logger.error(f"CPA 删除异常: {e}")
+        return False, f"删除异常: {e}"
+
+
+def cleanup_cpa_auth_files(
+    target_emails: list[str],
+    api_url: str = None,
+    api_key: str = None,
+) -> Tuple[bool, dict]:
+    if not api_url:
+        api_url = _get_config_value("cpa_api_url")
+    if not api_key:
+        api_key = _get_config_value("cpa_api_key")
+    if not api_url:
+        return False, {"error": "CPA API URL 未配置"}
+
+    emails = []
+    for email in target_emails or []:
+        normalized = _normalize_email(email)
+        if normalized and normalized not in emails:
+            emails.append(normalized)
+    if not emails:
+        return True, {"attempted": 0, "deleted": [], "failed": []}
+
+    matched_identifiers: dict[str, list[str]] = {email: [] for email in emails}
+    ok, items_or_error = list_cpa_auth_files(api_url=api_url, api_key=api_key)
+    if ok:
+        for item in items_or_error:
+            if not isinstance(item, dict):
+                continue
+            for email in emails:
+                if _item_matches_email(item, email):
+                    for identifier in _collect_item_identifiers(item):
+                        if identifier not in matched_identifiers[email]:
+                            matched_identifiers[email].append(identifier)
+                    break
+
+    deleted: list[str] = []
+    failed: list[dict] = []
+    for email in emails:
+        candidates = matched_identifiers[email] or [f"{email}.json", email]
+        last_error = "未匹配到可删除的标识"
+        for identifier in candidates:
+            ok, msg = delete_cpa_auth_file(identifier, api_url=api_url, api_key=api_key)
+            if ok:
+                deleted.append(email)
+                last_error = ""
+                break
+            last_error = msg
+        if last_error:
+            failed.append({"email": email, "error": last_error})
+
+    return True, {
+        "attempted": len(emails),
+        "deleted": deleted,
+        "failed": failed,
+    }
 
 
 def upload_to_team_manager(

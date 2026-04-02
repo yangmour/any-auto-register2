@@ -16,7 +16,7 @@ CONFIG_KEYS = [
     "outlook_browser_path", "outlook_bot_protection_wait", "outlook_max_captcha_retries",
     "cfworker_api_url", "cfworker_admin_token", "cfworker_domain", "cfworker_fingerprint",
     "luckmail_base_url", "luckmail_api_key", "luckmail_email_type", "luckmail_domain",
-    "cpa_api_url", "cpa_api_key",
+    "cpa_api_url", "cpa_api_key", "cpa_cleanup_enabled", "cpa_cleanup_interval_seconds",
     "team_manager_url", "team_manager_key",
     "cliproxyapi_management_key",
     "grok2api_url", "grok2api_app_key", "grok2api_pool", "grok2api_quota",
